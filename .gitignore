@@ -1,0 +1,4 @@
+/vendor/
+composer.lock
+credentials.json
+qr.png

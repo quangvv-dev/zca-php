@@ -1,0 +1,50 @@
+<?php
+
+namespace Zca\Apis;
+
+use Zca\Errors\ZaloApiError;
+use Zca\Utils;
+
+/**
+ * Port of src/apis/getGroupMembersInfo.ts
+ *
+ * Response: array{profiles: array<string, array{displayName: string, zaloName: string, avatar: string, accountStatus: int, type: int, lastUpdateTime: int, globalId: string, id: string}>, unchangeds_profile: array}
+ */
+class GetGroupMembersInfo extends BaseApi
+{
+    /**
+     * @var string
+     */
+    private $serviceURL;
+
+    protected function init(): void
+    {
+        $this->serviceURL = $this->utils->makeURL("{$this->api->zpwServiceMap["profile"][0]}/api/social/group/members");
+    }
+
+    /**
+     * Get group information
+     *
+     * @param string|string[] $memberId member id or array of member ids
+     *
+     * @throws ZaloApiError
+     * @return mixed
+     */
+    public function __invoke($memberId)
+    {
+        if (!is_array($memberId)) $memberId = [$memberId];
+
+        $params = [
+            "friend_pversion_map" => array_map(function ($id) {
+                return substr_compare($id, "_0", -strlen("_0")) === 0 ? $id : "{$id}_0";
+            }, $memberId),
+        ];
+
+        $encryptedParams = $this->utils->encodeAES(Utils::json($params));
+        if (!$encryptedParams) throw new ZaloApiError("Failed to encrypt message");
+
+        $response = $this->utils->request($this->utils->makeURL($this->serviceURL, ["params" => $encryptedParams]));
+
+        return $this->utils->resolve($response);
+    }
+}
