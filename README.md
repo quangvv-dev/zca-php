@@ -4,6 +4,8 @@ Bản port PHP của [zca-js](https://github.com/RFS-ADRENO/zca-js) (Unofficial 
 
 > [!WARNING]
 > Đây là API không chính thức, hoạt động bằng cách giả lập Zalo Web. Tài khoản có thể bị khoá. Bạn tự chịu rủi ro khi sử dụng.
+>
+> Sản phẩm chỉ dùng cho việc học tập và nghiên cứu không sử dụng thương mại hoá.
 
 ## Phiên bản
 
@@ -21,25 +23,6 @@ Yêu cầu chung: ext-openssl, ext-zlib, ext-json, ext-mbstring.
 ```bash
 composer require eric-sa/zca-php
 ```
-
-Khi chưa publish lên Packagist, có thể cài qua repository `path` hoặc `vcs` trong `composer.json` của project Laravel:
-
-```json
-{
-    "repositories": [
-        { "type": "path", "url": "../zca-js/zca-php" }
-    ],
-    "require": {
-        "eric-sa/zca-php": "*"
-    }
-}
-```
-
-```bash
-composer require eric-sa/zca-php:*
-```
-
-Nếu dùng git, thay bằng `{ "type": "vcs", "url": "https://github.com/quangvv-dev/zca-php.git" }`.
 
 ## Khác biệt so với zca-js
 
