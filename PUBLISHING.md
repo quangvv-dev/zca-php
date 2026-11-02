@@ -26,7 +26,7 @@ cd zca-php
 git init -b main
 git add .
 git commit -m "zca-php 2.0.0 (PHP 8.1+)"
-git remote add origin git@github.com:eric-sa/zca-php.git
+git remote add origin https://github.com/quangvv-dev/zca-php.git
 git push -u origin main
 git tag v2.0.0 && git push origin v2.0.0
 
@@ -35,19 +35,18 @@ cd ../zca-php-1.x
 git init -b 1.x
 git add .
 git commit -m "zca-php 1.0.0 (PHP 7.1.3+)"
-git remote add origin git@github.com:eric-sa/zca-php.git
+git remote add origin https://github.com/quangvv-dev/zca-php.git
 git push -u origin 1.x
 git tag v1.0.0 && git push origin v1.0.0
 ```
 
 `vendor/` và `composer.lock` đã nằm trong `.gitignore`. Library không commit lock file.
 
-Hai thư mục này hiện nằm trong repo zca-js. Bạn nên chuyển chúng ra ngoài, hoặc thêm `zca-php*/` vào `.gitignore` của zca-js, để git của zca-js không coi chúng là repo lồng nhau.
 
 ## 3. Đăng ký trên Packagist
 
 1. Đăng nhập https://packagist.org bằng GitHub.
-2. Vào **Submit** và dán URL repo `https://github.com/eric-sa/zca-php`.
+2. Vào **Submit** và dán URL repo `https://github.com/quangvv-dev/zca-php`.
 3. Packagist tự đọc cả hai branch và các tag: `v2.0.0` thành bản 2.0.0, `v1.0.0` thành bản 1.0.0, branch `1.x` thành `1.x-dev`, branch `main` thành `2.x-dev`.
 4. Bật auto-update: trong trang package, làm theo hướng dẫn GitHub hook (tài khoản đăng nhập bằng GitHub thường đã tự bật).
 

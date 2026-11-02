@@ -39,7 +39,7 @@ Khi chưa publish lên Packagist, có thể cài qua repository `path` hoặc `v
 composer require eric-sa/zca-php:*
 ```
 
-Nếu dùng git, thay bằng `{ "type": "vcs", "url": "git@github.com:eric-sa/zca-php.git" }`.
+Nếu dùng git, thay bằng `{ "type": "vcs", "url": "https://github.com/quangvv-dev/zca-php.git" }`.
 
 ## Khác biệt so với zca-js
 

@@ -9,6 +9,11 @@
         "chatbot",
         "laravel"
     ],
+    "homepage": "https://github.com/quangvv-dev/zca-php",
+    "support": {
+        "issues": "https://github.com/quangvv-dev/zca-php/issues",
+        "source": "https://github.com/quangvv-dev/zca-php"
+    },
     "require": {
         "php": "^8.1",
         "ext-json": "*",
