@@ -124,6 +124,34 @@ PHP 7 không có Fiber. Vì vậy `run()` gom các tin nhắn websocket nhận �
 > [!IMPORTANT]
 > Upload **video hoặc file** (không phải ảnh) cần listener đang chạy trong cùng process, giống như zca-js. Zalo trả URL file qua websocket (`file_done`). Gửi text và ảnh thì không cần listener.
 
+### Đồng bộ tin nhắn từ điện thoại (`pullMobile` / `sync_event`)
+
+Phần này port từ [zca-js PR #269](https://github.com/RFS-ADRENO/zca-js/pull/269). PR này chưa được merge vào zca-js.
+
+```php
+use Zca\Models\SyncEventType;
+use Zca\Utils;
+
+$keys = Utils::generateRSAKeyPair();
+
+$api->listener->on("sync_event", function ($event) use ($api, $keys) {
+    // $event->type: SyncEventType::USER_CONFIRM | SYNCMSG_INFO | TRANSFER_ERROR | UNKNOWN
+    if ($event->type == SyncEventType::SYNCMSG_INFO) {
+        $result = $api->getSyncData($event->data + ["savePath" => "./sync_data"]); // tải file .db.crypt
+        $aesKey = Utils::decryptWithPrivateKey($keys["privateKey"], $event->data["encrypted_key"]); // khoá AES 32 byte của file
+    }
+});
+
+$api->listener->on("connected", function () use ($api, $keys) {
+    $api->pullMobile(["public_key" => $keys["publicKeyBase64"]]); // điện thoại sẽ hỏi xác nhận
+});
+
+$api->listener->start();
+$api->listener->run();
+```
+
+Thư viện chỉ tải file `.db.crypt` về (đã mã hoá), giống bản JS. Việc giải mã nội dung file chưa được làm, cả ở zca-js lẫn ở đây. Xem ví dụ đầy đủ ở `examples/sync.php`.
+
 ## Laravel
 
 Service provider và facade được đăng ký tự động.

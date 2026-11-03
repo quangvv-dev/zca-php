@@ -2,3 +2,4 @@
 composer.lock
 credentials.json
 qr.png
+sync_data/

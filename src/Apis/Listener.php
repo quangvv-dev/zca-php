@@ -20,6 +20,7 @@ use Zca\Models\GroupMessage;
 use Zca\Models\GroupSeenMessage;
 use Zca\Models\GroupTyping;
 use Zca\Models\Reaction;
+use Zca\Models\SyncEvent;
 use Zca\Models\ThreadType;
 use Zca\Models\Undo;
 use Zca\Models\UserDeliveredMessage;
@@ -48,6 +49,7 @@ use Zca\Utils;
  *  - friend_event: (FriendEvent $data)
  *  - group_event: (GroupEvent $data)
  *  - cipher_key: (string $key)
+ *  - sync_event: (SyncEvent $data)
  *
  * The listener runs on the ReactPHP event loop: call `start()` then `run()`.
  * Blocking API calls made from event callbacks (e.g. replying with `$api->sendMessage()`) work as expected.
@@ -442,6 +444,18 @@ class Listener extends EventEmitter
                         );
                         if ($friendEvent->isSelf && !$this->selfListen) continue;
                         $this->emit("friend_event", [$friendEvent]);
+                        // Handle sync event
+                    } elseif ($control["content"]["act_type"] == "syncmsgmb") {
+                        $syncEventData = is_string($control["content"]["data"])
+                            ? Utils::jsonDecode($control["content"]["data"])
+                            : $control["content"]["data"];
+                        $syncEvent = SyncEvent::initialize(
+                            $syncEventData,
+                            $control["content"]["act"],
+                            $control["content"]["act_type"]
+                        );
+                        // This return different sync events, for the data info the event act == syncmsg_info
+                        $this->emit("sync_event", [$syncEvent]);
                     }
                 }
             }
