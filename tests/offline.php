@@ -148,6 +148,22 @@ foreach ($calls as $name => $call) {
 }
 restore_error_handler();
 
+// pullMobile / RSA helpers / getSyncData (zca-js PR #269)
+$keys = Utils::generateRSAKeyPair();
+$res = $api->pullMobile(["public_key" => $keys["publicKeyBase64"]]);
+$lastUri = (string) end($requests)->getUri();
+$check("pullMobile params", $res["_path"] === "/api/message/pull_mobile_msg" && array_keys($res["_params"]) === ["pc_name", "public_key", "from_seq_id", "is_retry", "min_seq_id", "temp_key", "imei"] && $res["_params"]["public_key"] === $keys["publicKeyBase64"]);
+$check("pullMobile url", str_starts_with($lastUri, "https://tt-file-wpa.chat.zalo.me/api/message/pull_mobile_msg?zpw_ver=685&zpw_type=30&zpw_ver=685&zpw_type=30&params=") /* same duplicated params as zca-js */ && str_ends_with($lastUri, "&nretry=0"));
+$aes = random_bytes(32);
+openssl_public_encrypt($aes, $encAes, $keys["publicKey"], OPENSSL_PKCS1_PADDING);
+$check("RSA decryptWithPrivateKey", Utils::decryptWithPrivateKey($keys["privateKey"], base64_encode($encAes)) === $aes);
+$savePath = sys_get_temp_dir() . "/zca-sync-test-" . getmypid();
+$sync = $api->getSyncData(["url" => "https://f21-zpc.zdn.vn/sync/backup", "encrypted_key" => "k", "file_name" => "backup", "file_size" => 1, "checksum_code" => "c", "from_seq_id" => 0, "is_full_transfer" => 1, "savePath" => $savePath]);
+$check("getSyncData saves .db.crypt", $sync["success"] && $sync["data"]["metadata"]["file_name"] === "backup.db.crypt" && is_file($sync["data"]["file_path"]) && str_contains(end($requests)->getHeaderLine("cookie"), "zpsid=xyz"));
+@unlink($savePath . "/backup.db.crypt"); @rmdir($savePath);
+$stream = $api->getSyncData(["url" => "https://f21-zpc.zdn.vn/sync/backup", "encrypted_key" => "k", "file_name" => "backup", "file_size" => 1, "checksum_code" => "c", "from_seq_id" => 0, "is_full_transfer" => 1, "returnStream" => true]);
+$check("getSyncData stream", $stream["success"] && $stream["stream"]["stream"] instanceof \Psr\Http\Message\StreamInterface && $stream["stream"]["response"]["status"] === 200);
+
 // custom API
 $api->custom("myApi", fn(array $p) => $p["props"]["x"] * 2 . $p["ctx"]->uid);
 $check("custom api", $api->myApi(["x" => 21]) === "421000");
@@ -174,6 +190,14 @@ $plain = gzcompress(json_encode(["data" => ["msgs" => [["msgId" => "922337203685
 $iv = random_bytes(16); $aad = random_bytes(16); $tag = "";
 $ct = openssl_encrypt($plain, "aes-256-gcm", base64_decode($cipherKey), OPENSSL_RAW_DATA, $iv, $tag, $aad, 16);
 $handle->invoke($listener, $ws, $mkMsg($frame(501, 0, ["data" => rawurlencode(base64_encode($iv . $aad . $ct . $tag)), "encrypt" => 2])));
+$syncEvents = [];
+$listener->on("sync_event", function ($e) use (&$syncEvents) { $syncEvents[] = $e; });
+$controls = gzcompress(json_encode(["data" => ["controls" => [
+    ["content" => ["act_type" => "syncmsgmb", "act" => "syncmsg_info", "data" => json_encode(["url" => "https://f21-zpc.zdn.vn/x", "file_name" => "b", "encrypted_key" => "k"])]],
+    ["content" => ["act_type" => "syncmsgmb", "act" => "user_confirm", "data" => ["user_action" => 1, "public_key" => "p", "pc_name" => "Web"]]],
+]]]));
+$handle->invoke($listener, $ws, $mkMsg($frame(601, 0, ["data" => base64_encode($controls), "encrypt" => 1])));
+$check("listener sync_event", count($syncEvents) === 2 && $syncEvents[0]->type === \Zca\Models\SyncEventType::SYNCMSG_INFO && $syncEvents[0]->data["url"] === "https://f21-zpc.zdn.vn/x" && $syncEvents[1]->type === \Zca\Models\SyncEventType::USER_CONFIRM && $syncEvents[1]->act_type === "syncmsgmb");
 $check("listener message", count($messages) === 1 && $messages[0]->threadId === "42" && $messages[0]->data["idTo"] === "1000" && $messages[0]->data["msgId"] === "9223372036854775899");
 \React\EventLoop\Loop::stop();
 

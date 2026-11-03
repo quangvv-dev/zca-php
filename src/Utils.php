@@ -322,6 +322,7 @@ final class Utils
      *  - headers: array<string, string>
      *  - body: string | array<string, mixed> (array is sent as application/x-www-form-urlencoded, like URLSearchParams)
      *  - redirect: "follow" (default) | "manual"
+     *  - stream: bool, do not buffer the response body (read it with `$response->getBody()->read()`)
      *
      * @param array{method?: string, headers?: array<string, string>, body?: string|array<string, mixed>|null, redirect?: string}|null $options
      */
@@ -363,6 +364,7 @@ final class Utils
         if ($body !== null && $body !== "") $guzzleOptions["body"] = $body;
         if (!empty($ctx->options["proxy"])) $guzzleOptions["proxy"] = $ctx->options["proxy"];
         if (isset($options["timeout"])) $guzzleOptions["timeout"] = $options["timeout"];
+        if (!empty($options["stream"])) $guzzleOptions["stream"] = true;
 
         $response = self::getHttpClient($ctx)->request($method, $url, $guzzleOptions);
 
@@ -798,6 +800,58 @@ final class Utils
     public static function validatePin(string $encryptedPin, string $pin): bool
     {
         return md5($pin) === $encryptedPin;
+    }
+
+    /**
+     * Generates an RSA key pair for mobile message synchronization
+     *
+     * @return array{publicKeyBase64: string, privateKeyBase64: string, publicKey: string, privateKey: string} keys in both PEM and Base64 formats
+     */
+    public static function generateRSAKeyPair(): array
+    {
+        $key = openssl_pkey_new([
+            "private_key_bits" => 2048,
+            "private_key_type" => OPENSSL_KEYTYPE_RSA,
+        ]);
+        if ($key === false) throw new ZaloApiError("Failed to generate RSA key pair: " . openssl_error_string());
+
+        openssl_pkey_export($key, $privateKey);
+        $publicKey = openssl_pkey_get_details($key)["key"];
+
+        $publicKeyBase64 = preg_replace('/\s+/', "", str_replace(["-----BEGIN PUBLIC KEY-----", "-----END PUBLIC KEY-----"], "", $publicKey));
+        $privateKeyBase64 = preg_replace('/\s+/', "", str_replace(["-----BEGIN PRIVATE KEY-----", "-----END PRIVATE KEY-----"], "", $privateKey));
+
+        return [
+            "publicKeyBase64" => $publicKeyBase64,
+            "privateKeyBase64" => $privateKeyBase64,
+            "publicKey" => $publicKey,
+            "privateKey" => $privateKey,
+        ];
+    }
+
+    /**
+     * Decrypt data using RSA private key with PKCS1 scheme
+     * Validates that the decrypted result is a 32-byte AES key
+     *
+     * @param string $privateKey RSA private key in PEM format
+     * @param string $encryptedBase64 Base64 encoded encrypted data
+     * @return string Decrypted key (32 raw bytes)
+     * @throws ZaloApiError if decryption fails or result is not 32 bytes
+     */
+    public static function decryptWithPrivateKey(string $privateKey, string $encryptedBase64): string
+    {
+        $cleanKey = str_replace("\\n", "\n", $privateKey);
+
+        $encryptedBuffer = base64_decode($encryptedBase64);
+        if (!openssl_private_decrypt($encryptedBuffer, $decryptedBuffer, $cleanKey, OPENSSL_PKCS1_PADDING)) {
+            throw new ZaloApiError("Failed to decrypt with private key: " . openssl_error_string());
+        }
+
+        if (strlen($decryptedBuffer) !== 32) {
+            throw new ZaloApiError("Invalid AES key length: " . strlen($decryptedBuffer) . " bytes (expected 32 bytes)");
+        }
+
+        return $decryptedBuffer;
     }
 
     /**

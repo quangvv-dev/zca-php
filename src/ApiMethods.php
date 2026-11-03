@@ -96,6 +96,7 @@ namespace Zca;
  * @method mixed getStickerCategoryDetail(int $cateId) see {@see \Zca\Apis\GetStickerCategoryDetail}
  * @method mixed getStickers(string $keyword) see {@see \Zca\Apis\GetStickers}
  * @method array getStickersDetail(array|int $stickerIds) see {@see \Zca\Apis\GetStickersDetail}
+ * @method array getSyncData(array $params) see {@see \Zca\Apis\GetSyncData}
  * @method mixed getUnreadMark() see {@see \Zca\Apis\GetUnreadMark}
  * @method mixed getUserInfo(array|string $userId, int $avatarSize = \Zca\Models\AvatarSize::Small) see {@see \Zca\Apis\GetUserInfo}
  * @method mixed inviteUserToGroups(string $userId, array|string $groupId) see {@see \Zca\Apis\InviteUserToGroups}
@@ -108,6 +109,7 @@ namespace Zca;
  * @method array logout() see {@see \Zca\Apis\Logout}
  * @method mixed lostFocus() see {@see \Zca\Apis\LostFocus}
  * @method mixed parseLink(string $link) see {@see \Zca\Apis\ParseLink}
+ * @method mixed pullMobile(array $params) see {@see \Zca\Apis\PullMobile}
  * @method mixed registerCatalog(bool $enable) see {@see \Zca\Apis\RegisterCatalog}
  * @method mixed rejectFriendRequest(string $friendId) see {@see \Zca\Apis\RejectFriendRequest}
  * @method mixed removeFriend(string $friendId) see {@see \Zca\Apis\RemoveFriend}
